@@ -3,6 +3,9 @@ using Test
 
 @testset "MiniFastai.jl" begin
     # Write your tests here.
-    @test my_f(2,1) == 7
-    @test my_f(2,3) == 13
+    include("test_data.jl")
+    include("test_callback.jl")
+    include("test_cnn.jl")
+    #include("test_learner.jl")
+    include("test_training.jl")
 end
