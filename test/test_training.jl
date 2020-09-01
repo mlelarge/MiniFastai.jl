@@ -1,10 +1,13 @@
+using Flux.Data
+using Flux.Optimise
+using Flux: logitcrossentropy
 @testset "training" begin
     all_train_set, _ = get_processed_data_MNIST()
     train_set = (all_train_set[1][:,:,:,1:1000], all_train_set[2][:,1:1000])
     val_set = (all_train_set[1][:,:,:,1000:2000], all_train_set[2][:,1000:2000])
     bs=512
     train_loader = DataLoader(train_set, batchsize=bs, shuffle=true)
-    val_loader = DataLoader(val_set, batchsize=2*bs, shuffle=false)
+    val_loader = DataLoader(val_set, batchsize=bs, shuffle=false)
     databunch = Databunch(train_loader,val_loader)
     nfs = [8,16,32,32]
     cnn_model = get_model(nfs)
