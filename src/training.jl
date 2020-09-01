@@ -22,10 +22,10 @@ function fit!(l::Learner, n_epochs)
             #source https://fluxml.ai/Flux.jl/stable/training/training/
             # https://fluxml.ai/Zygote.jl/latest/adjoints/#Pullbacks-1
             y_pred, back_net = pullback(() -> mod(xb), ps)
-            current_loss, back_loss = pullback(y -> loss(y,yb),y_pred)
+            current_loss, back_loss = pullback(y -> los_f(y,yb),y_pred)
             #current_loss, back = pullback(() -> los_f(mod(xb),yb), ps)
             gs = back_net(back_loss(1)[1])#back(one(current_loss))
-            update!(SGD,ps,gs)
+            update!(opt,ps,gs)
         else
             y_pred = mod(xb)
             current_loss = los_f(y_pred,yb)

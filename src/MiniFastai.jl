@@ -15,6 +15,7 @@ include("cnn.jl")
 include("learner.jl")
 include("hook.jl")
 include("training.jl")
+include("utils.jl")
 
 export my_f
 
@@ -34,6 +35,8 @@ export AbstractLearner
 export Learner
 
 export get_model_hooks
+
+export accuracy
 
 export fit!
 
