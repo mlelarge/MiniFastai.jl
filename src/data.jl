@@ -49,7 +49,7 @@ abstract type AbstractDatabunch end
 """
     Databunch(train_loader::Flux.Data.DataLoader,val_loader::Flux.Data.DataLoader)
 
-Two dataloader, one for the train set and one for the validation set.
+Two dataloaders, one for the train set and one for the validation set.
 """
 struct Databunch <: AbstractDatabunch
     train_loader::Flux.Data.DataLoader

@@ -2,10 +2,10 @@ abstract type AbstractCallback end
 
 # source: https://youtu.be/EpNeNCGmyZE?t=633
 # default fucntion blabla(cb;kwargs...) and fucntion blabla!(cb;kwargs...)
-for sym in [:before_fit, :before_epoch, :before_all_batches, :before_batch, :after_batch, :before_validate, :after_all_batches, :after_epoch, :after_fit]
-    @eval function $sym(cb::AbstractCallback;kwargs...)
-    end
-end
+#for sym in [:before_fit, :before_epoch, :before_all_batches, :before_batch, :after_batch, :before_validate, :after_all_batches, :after_epoch, :after_fit]
+#    @eval function $sym(cb::AbstractCallback;kwargs...)
+#    end
+#end
 
 for sym in [:before_fit, :before_epoch, :before_all_batches, :before_batch, :after_batch, :before_validate, :after_all_batches, :after_epoch, :after_fit]
     @eval function $(Symbol(string(sym,"!")))(cb::AbstractCallback;kwargs...)
@@ -55,25 +55,24 @@ function before_validate!(cb::TrainEvalCallback; kwargs...)
     cb.in_train = false
 end
 
-@with_kw mutable struct AvgStatsCallback <: AbstractCallback
+@with_kw mutable struct AvgStatsCallback{F<:Function} <: AbstractCallback
     order::Int = 0
     current_sum_stat::Float64 = 1000.0
     num_samples::Int = 0
     average_stat::Float64 = 1000.0
-    name = :loss
+    f::F = logitcrossentropy
+    name::String = "loss"
 end
 
-macro encaps(name_func, p, y)
-    quote
-        $(esc(name_func))($(esc(p)),$(esc(y)))
-    end
+function AvgStatsCallback(order::Int,f::Function; kwargs...)
+    AvgStatsCallback{typeof(f)}(order=order, f=f, name=String(Symbol(f)))
 end
 
 function after_batch!(cb::AvgStatsCallback; batch_loss, batch_size, batch_pred, batch_label, kwargs...)
     if cb.name == :loss
         cb.current_sum_stat += batch_loss *batch_size
     else
-        cb.current_sum_stat += @encaps(eval(cb.name),batch_pred,batch_label) *batch_size
+        cb.current_sum_stat += cb.f(batch_pred,batch_label) *batch_size
     end
     cb.num_samples += batch_size
 end
