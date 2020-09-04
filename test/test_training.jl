@@ -19,5 +19,5 @@ using Flux: logitcrossentropy
     loss(pred,y) = logitcrossentropy(pred,y)
     learner_cnn = Learner(cnn_model_hook,SGD,loss,databunch,cbs=(AvgStatsCallback(),AvgStatsCallback(1,accuracy),))
 
-    fit!(learner_cnn,n_epochs)
+    rec = fit!(learner_cnn,n_epochs)
 end
