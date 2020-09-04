@@ -20,6 +20,7 @@ end
     current_batch::Int = 0
     in_train::Bool = true
     use_cuda::Bool = false
+    num_recorder::Int = 0
 end
 
 init_c_epoch!(cb::TrainEvalCallback) = cb.current_epoch = 0
@@ -43,7 +44,7 @@ function after_batch!(cb::TrainEvalCallback; kwargs...)
 end
 
 function before_epoch!(cb::TrainEvalCallback; epoch, kwargs...)
-    cb.current_epoch = epoch
+    cb.current_epoch = epoch-1# start at zero
     cb.in_train = true
 end
 
@@ -62,28 +63,47 @@ end
     average_stat::Float64 = 1000.0
     f::F = logitcrossentropy
     name::String = "loss"
+    recorder::Bool = true
+    rec_ind::Int = 0
+    rec_num::Int = 0
+    recorder_initialzed::Bool = false
 end
 
 function AvgStatsCallback(order::Int,f::Function; kwargs...)
     AvgStatsCallback{typeof(f)}(order=order, f=f, name=String(Symbol(f)))
 end
 
-function after_batch!(cb::AvgStatsCallback; batch_loss, batch_size, batch_pred, batch_label, kwargs...)
-    if cb.name == :loss
-        cb.current_sum_stat += batch_loss *batch_size
-    else
-        cb.current_sum_stat += cb.f(batch_pred,batch_label) *batch_size
+function before_fit!(cb::AvgStatsCallback; te_cb::TrainEvalCallback, kwargs...)
+    if cb.recorder && !cb.recorder_initialzed
+        te_cb.num_recorder += 1
+        cb.rec_num = te_cb.num_recorder
+        cb.recorder_initialzed = true
     end
-    cb.num_samples += batch_size
 end
 
-function after_all_batches!(cb::AvgStatsCallback; te_cb::TrainEvalCallback, kwargs...)
+function after_batch!(cb::AvgStatsCallback; rec, batch_loss, batch_size, batch_pred, batch_label, kwargs...)
+    if cb.name == "loss"
+         incr = batch_loss 
+    else
+        incr = cb.f(batch_pred,batch_label) 
+    end
+    cb.current_sum_stat += incr*batch_size
+    cb.num_samples += batch_size
+    if cb.recorder
+        cb.rec_ind += 1
+        rec[cb.rec_num,cb.rec_ind] = incr
+    end
+end
+
+function after_all_batches!(cb::AvgStatsCallback; te_cb::TrainEvalCallback, epoch::Int, kwargs...)
     cb.average_stat = cb.current_sum_stat/cb.num_samples
     cb.current_sum_stat = 0
     cb.num_samples = 0
     if te_cb.in_train
-        println("Train - epoch: ", round(Int, te_cb.current_epoch), " ", cb.name, ": ", cb.average_stat)
+        @assert round(Int, te_cb.current_epoch) == epoch "pb not passing over all the train set"
+        println("Train - epoch: ", epoch, " ", cb.name, ": ", cb.average_stat)
     else
-        println("Val - epoch: ", round(Int, te_cb.current_epoch-1), " ", cb.name, ": ", cb.average_stat)
+        @assert round(Int, te_cb.current_epoch) == epoch+1 "pb not passing over all the validation set"
+        println("Val - epoch: ", epoch, " ", cb.name, ": ", cb.average_stat)
     end
 end

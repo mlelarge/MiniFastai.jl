@@ -4,10 +4,13 @@ function fit!(l::Learner, n_epochs)
     opt = optimizer(l)
     dat = data(l)
     r = trainevalcb(l)
-    cb_before_fit!(l, n_epochs=n_epochs, model=mod, loss_func=los_f)
+    cb_before_fit!(l, te_cb=r, n_epochs=n_epochs, model=mod, loss_func=los_f)
     if r.use_cuda
         mod = mod |> gpu
         los_f = los_f |> gpu
+    end
+    if r.num_recorder > 0
+        rec = Array{Float64}(undef,r.num_recorder,n_epochs*(length(dat.train_loader)+length(dat.val_loader)))
     end
 
     function one_batch(xb,yb)
@@ -30,10 +33,10 @@ function fit!(l::Learner, n_epochs)
             y_pred = mod(xb)
             current_loss = los_f(y_pred,yb)
         end
-        cb_after_batch!(l, batch_loss=current_loss, batch_pred = y_pred, batch_label = yb, batch_size=size(xb,1))
+        cb_after_batch!(l, rec=rec, batch_loss=current_loss, batch_pred = y_pred, batch_label = yb, batch_size=size(xb,1))
     end
     
-    function all_batches(dat)
+    function all_batches(dat,epoch)
         if r.in_train
             data_loader = dat.train_loader
         else
@@ -43,17 +46,18 @@ function fit!(l::Learner, n_epochs)
         for (i, (xb,yb)) in enumerate(data_loader)
             one_batch(xb,yb)
         end
-        cb_after_all_batches!(l)
+        cb_after_all_batches!(l,epoch=epoch)
     end
     
     for epoch in 1:n_epochs
-        cb_before_epoch!(l, epoch=epoch-1)
-        all_batches(dat)
+        cb_before_epoch!(l, epoch=epoch)
+        all_batches(dat,epoch)
         cb_before_validate!(l)
         if !r.in_train
-            all_batches(dat)
+            all_batches(dat,epoch)
         end
         cb_after_epoch!(l, epoch=epoch)
     end
     cb_after_fit!(l)
+    return rec
 end
