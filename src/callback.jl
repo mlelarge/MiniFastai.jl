@@ -77,7 +77,10 @@ function before_fit!(cb::AvgStatsCallback; te_cb::TrainEvalCallback, kwargs...)
     if cb.recorder && !cb.recorder_initialzed
         te_cb.num_recorder += 1
         cb.rec_num = te_cb.num_recorder
+        cb.rec_ind = 0
         cb.recorder_initialzed = true
+    elseif cb.recorder_initialzed && cb.recorder_initialzed
+        cb.rec_ind = 0
     end
 end
 
