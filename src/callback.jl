@@ -36,6 +36,9 @@ function before_fit!(cb::TrainEvalCallback; n_epochs::Int, model, loss_func, kwa
     init_c_epoch!(cb)
     init_c_batch!(cb)
     cb.n_epochs = n_epochs
+    if CUDA.has_cuda_gpu()
+        cb.use_cuda = true
+    end
 end
 
 function after_batch!(cb::TrainEvalCallback; kwargs...)

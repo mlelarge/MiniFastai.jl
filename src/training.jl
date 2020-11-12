@@ -6,6 +6,7 @@ function fit!(l::Learner, n_epochs)
     r = trainevalcb(l)
     cb_before_fit!(l, te_cb=r, n_epochs=n_epochs, model=mod, loss_func=los_f)
     if r.use_cuda
+        println("using GPU")
         mod = mod |> gpu
         los_f = los_f |> gpu
     end
