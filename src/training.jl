@@ -1,4 +1,4 @@
-function fit!(l::Learner, n_epochs)
+function fit!(l::Learner, n_epochs, transform=identity)
     mod = model(l)
     los_f = loss_func(l)
     opt = optimizer(l)
@@ -45,7 +45,7 @@ function fit!(l::Learner, n_epochs)
         end
         cb_before_all_batches!(l, d=data_loader)
         for (i, (xb,yb)) in enumerate(data_loader)
-            one_batch(xb,yb)
+            one_batch(transform(xb),yb)
         end
         cb_after_all_batches!(l,epoch=epoch)
     end
